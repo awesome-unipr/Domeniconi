@@ -1,6 +1,4 @@
 import paho.mqtt.client as mqtt
-import time
-import threading 
 
 class MqttClient:
     def __init__(self, host, port):
@@ -20,7 +18,7 @@ class MqttClient:
         print("Connected with result code " + str(rc))
     
     def on_message(self, client, userdata, msg, topic):
-        if self.client.on_message(topic) == "alert":
+        if self.client.on_message(topic) == "Alert":
             if self.client.on_message("vc2324/key-is-ok") == "Driver confirmed":
                 print("Alert confirmed, start breaking")
             else:
@@ -45,14 +43,7 @@ class MqttClient:
 class BrakingHandler:
     def __init__(self, mqtt_client):
         self._mqtt_client = mqtt_client
-        self._current_status = 'operating'
-
-    #def alert_check(self):
-    #   while True:
-    #        mqtt_client.on_message("vc2324/alert/brake MQTT")
-    #        time.sleep(10)
             
-    
     def display_status(self):
         return self._current_status
 
@@ -62,9 +53,5 @@ dms_handler = BrakingHandler(mqtt_client)
 mqtt_client.subscribe("vc2324/alert/brake MQTT")
 mqtt_client.subscribe("vc2324/key-is-ok MQTT")
 mqtt_client.start()
-
-# Start the thread for changing the status
-#change_status_thread = threading.Thread(target=BrakingHandler.alert_check())
-#change_status_thread.start()
 
 mqtt_client.stop()
