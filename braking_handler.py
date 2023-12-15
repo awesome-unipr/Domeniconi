@@ -17,12 +17,12 @@ class MqttClient:
     def on_connect(self, client, userdata, flags, rc):
         print("Connected with result code " + str(rc))
     
-    def on_message(self, client, userdata, msg, topic):
-        if self.client.on_message(topic) == "Alert":
+    def on_message(self, client, userdata, msg):
+        if (msg.payload) == "Alert":
             if self.client.on_message("vc2324/key-is-ok") == "Driver confirmed":
-                print("Alert confirmed, start breaking")
+                braking_handler.key_confirmed()
             else:
-                self.client.publish("vc2324/alert/key-not-recognized", "Key not recognized, aborted the alert")
+                braking_handler.key_unconfirmed()
         else:
             pass
 
@@ -43,12 +43,21 @@ class MqttClient:
 class BrakingHandler:
     def __init__(self, mqtt_client):
         self._mqtt_client = mqtt_client
+        self._status = "operative, no alert detected"
+
+    def key_confirmed(self):
+        print("Alert confirmed, start breaking")
+        self._status = "operative, alert detected, braking"
+
+    def key_unconfirmed(self):
+        self._mqtt_client.publish("vc2324/alert/key-not-recognized", "Key not recognized, aborted the alert")
+        self._status = "operative, alert detected, key not recognized"
             
     def display_status(self):
-        return self._current_status
+        return self._status
 
 mqtt_client = MqttClient('127.0.0.1', 1883)
-dms_handler = BrakingHandler(mqtt_client)
+braking_handler = BrakingHandler(mqtt_client)
 
 mqtt_client.subscribe("vc2324/alert/brake MQTT")
 mqtt_client.subscribe("vc2324/key-is-ok MQTT")
