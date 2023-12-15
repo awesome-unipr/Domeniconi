@@ -26,19 +26,19 @@ class MqttClient:
             case "vc2324/weather-current MQTT":
                 data = json.loads(msg.payload)
                 if data["current_kind"] == "rainy":
-                    cobu_handler._risk_level +=1
+                    cobu_handler.risk_level +=1
                 elif data["current_kind"] == "misty":
-                    cobu_handler._risk_level +=1
+                    cobu_handler.risk_level +=1
                 elif data["current_kind"] == "icy":
-                    cobu_handler._risk_level +=2
+                    cobu_handler.risk_level +=2
             
             case "vc2324/dms MQTT":
                 if msg.payload == "drunk":
-                    cobu_handler._risk_level += 3
+                    cobu_handler.risk_level += 3
                 elif msg.payload == "normal":
                     pass
                 else:
-                    cobu_handler._risk_level += 1
+                    cobu_handler.risk_level += 1
                 
 
     def subscribe(self, topic):
@@ -75,21 +75,23 @@ class HttpServer:
         web.run_app(self.app)
 
 class CobuHandler:
-    def __init__(self, mqtt_client, risk_level, log):
+    def __init__(self, mqtt_client):
         self._mqtt_client = mqtt_client
-        self._risk_level = risk_level
-        self._log = log
+        self.risk_level = 0
+        self.log = ""
 
     def check_risk_level(self):
-        if self._risk_level >= 3:
+        if self.risk_level >= 3:
             self._mqtt_client.publish("vc2324/alert/brake", "Alert")
-
-    def obu_status(self, topic, payload):
-        self._log.append(topic + payload)
-        print(topic, payload)
+            self.log = self.log + "\nAlert requested"
+        else:
+            self.log = self.log + "\nNo alert requested"
     
+    def obu_status(self, topic, payload):
+        self.log = self.log + "\n" + topic + " ," + payload 
+
     def display_status(self):
-        return self._log
+        return self.log
 
 
 mqtt_client = MqttClient('127.0.0.1', 1883)
